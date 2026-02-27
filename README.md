@@ -2,3 +2,4 @@
 A Streamlit-based web application for classifying brain tumors using MRI scans. It integrates four fine-tuned deep learning models and a weight-aware decision module to improve diagnostic accuracy. Each model is trained and evaluated independently, with contributions weighted by scaled validation accuracy during inference.
 
 👉 Launch App 🚀
+https://brain-tumour-image-classification-application-210924.streamlit.app/
