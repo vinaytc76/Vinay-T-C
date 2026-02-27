@@ -528,6 +528,141 @@ Trainable params: 2,100,484 (8.01 MB)
 Non-trainable params: 8,769,886 (33.45 MB)
 
 
+In [26] : 
+
+def plot_loss_curves(history):
+  train_loss = history.history["loss"]
+  val_loss = history.history["val_loss"]
+
+  train_accuracy = history.history["accuracy"]
+  val_accuracy = history.history["val_accuracy"]
+
+  plt.figure()
+  plt.subplot(2,1,1)
+  plt.title("Loss curves")
+  plt.plot(train_loss,label="Training Loss")
+  plt.plot(val_loss,label="Validation Loss")
+  plt.xlabel("Epochs")
+  plt.ylabel("loss")
+  plt.legend()
+
+
+  plt.subplot(2,1,2)
+  plt.title("Accuracy curves")
+  plt.plot(train_accuracy,label="Training Accuracy")
+  plt.plot(val_accuracy,label="Validation Accuracy")
+  plt.xlabel("Epochs")
+  plt.ylabel("Accuracy")
+  plt.legend()
+  plt.tight_layout()
+
+
+In [27] :
+
+len(base_model.layers)
+
+Out [27] :
+
+349
+
+In [28] :
+
+
+# Unfreeze layers to fine tune
+
+base_model.trainable = False
+
+for layer in base_model.layers[-310:]:
+  layer.trainable=True
+     
+In [29] :
+
+# Recompile the model
+model.compile(loss="sparse_categorical_crossentropy",
+                optimizer=tf.keras.optimizers.Adam(),
+               metrics=["accuracy"])
+     
+In [30] :
+
+reduce_lr = tf.keras.callbacks.ReduceLROnPlateau(patience=2,
+                                                          factor=0.1,
+                                                          min_lr=1e-8)
+
+checkpoint_path = "EfficientNetV2B2_fine_tune.weights.h5"
+checkpoint = tf.keras.callbacks.ModelCheckpoint(checkpoint_path,
+                                                save_best_only=True,
+                                                save_weights_only=True,
+                                                monitor='val_loss')
+csv_logger = tf.keras.callbacks.CSVLogger("EfficientNetV2B2_fine_tune.csv")
+
+
+In [31] : 
+
+
+# Fit the fine tuned model
+history = model.fit(train_data,epochs=25,
+                                 validation_data=validation_data,
+                                callbacks=[reduce_lr,checkpoint,csv_logger],
+                                class_weight=class_weights)
+Epoch 1/25
+572/572 ━━━━━━━━━━━━━━━━━━━━ 209s 188ms/step - accuracy: 0.5655 - loss: 9.9608 - val_accuracy: 0.8116 - val_loss: 0.6699 - learning_rate: 0.0010
+Epoch 2/25
+572/572 ━━━━━━━━━━━━━━━━━━━━ 45s 79ms/step - accuracy: 0.7913 - loss: 0.6664 - val_accuracy: 0.8774 - val_loss: 0.4461 - learning_rate: 0.0010
+Epoch 3/25
+572/572 ━━━━━━━━━━━━━━━━━━━━ 45s 78ms/step - accuracy: 0.8474 - loss: 0.4931 - val_accuracy: 0.8875 - val_loss: 0.4061 - learning_rate: 0.0010
+Epoch 4/25
+572/572 ━━━━━━━━━━━━━━━━━━━━ 44s 77ms/step - accuracy: 0.8910 - loss: 0.4062 - val_accuracy: 0.9092 - val_loss: 0.3063 - learning_rate: 0.0010
+Epoch 5/25
+572/572 ━━━━━━━━━━━━━━━━━━━━ 46s 80ms/step - accuracy: 0.9174 - loss: 0.3163 - val_accuracy: 0.9405 - val_loss: 0.2559 - learning_rate: 0.0010
+Epoch 6/25
+572/572 ━━━━━━━━━━━━━━━━━━━━ 44s 76ms/step - accuracy: 0.9298 - loss: 0.2947 - val_accuracy: 0.9451 - val_loss: 0.2533 - learning_rate: 0.0010
+Epoch 7/25
+572/572 ━━━━━━━━━━━━━━━━━━━━ 49s 86ms/step - accuracy: 0.9423 - loss: 0.2497 - val_accuracy: 0.9173 - val_loss: 0.5001 - learning_rate: 0.0010
+Epoch 8/25
+572/572 ━━━━━━━━━━━━━━━━━━━━ 44s 77ms/step - accuracy: 0.9383 - loss: 0.3080 - val_accuracy: 0.9499 - val_loss: 0.2696 - learning_rate: 0.0010
+Epoch 9/25
+572/572 ━━━━━━━━━━━━━━━━━━━━ 45s 79ms/step - accuracy: 0.9724 - loss: 0.1729 - val_accuracy: 0.9724 - val_loss: 0.1324 - learning_rate: 1.0000e-04
+Epoch 10/25
+572/572 ━━━━━━━━━━━━━━━━━━━━ 82s 79ms/step - accuracy: 0.9860 - loss: 0.0798 - val_accuracy: 0.9735 - val_loss: 0.1120 - learning_rate: 1.0000e-04
+Epoch 11/25
+572/572 ━━━━━━━━━━━━━━━━━━━━ 45s 78ms/step - accuracy: 0.9901 - loss: 0.0613 - val_accuracy: 0.9746 - val_loss: 0.1067 - learning_rate: 1.0000e-04
+Epoch 12/25
+572/572 ━━━━━━━━━━━━━━━━━━━━ 46s 80ms/step - accuracy: 0.9922 - loss: 0.0487 - val_accuracy: 0.9742 - val_loss: 0.1053 - learning_rate: 1.0000e-04
+Epoch 13/25
+572/572 ━━━━━━━━━━━━━━━━━━━━ 81s 79ms/step - accuracy: 0.9956 - loss: 0.0340 - val_accuracy: 0.9770 - val_loss: 0.1085 - learning_rate: 1.0000e-04
+Epoch 14/25
+572/572 ━━━━━━━━━━━━━━━━━━━━ 45s 79ms/step - accuracy: 0.9950 - loss: 0.0341 - val_accuracy: 0.9781 - val_loss: 0.1177 - learning_rate: 1.0000e-04
+Epoch 15/25
+572/572 ━━━━━━━━━━━━━━━━━━━━ 81s 77ms/step - accuracy: 0.9956 - loss: 0.0302 - val_accuracy: 0.9788 - val_loss: 0.1099 - learning_rate: 1.0000e-05
+Epoch 16/25
+572/572 ━━━━━━━━━━━━━━━━━━━━ 45s 79ms/step - accuracy: 0.9961 - loss: 0.0290 - val_accuracy: 0.9781 - val_loss: 0.1050 - learning_rate: 1.0000e-05
+Epoch 17/25
+572/572 ━━━━━━━━━━━━━━━━━━━━ 43s 75ms/step - accuracy: 0.9962 - loss: 0.0279 - val_accuracy: 0.9779 - val_loss: 0.1075 - learning_rate: 1.0000e-05
+Epoch 18/25
+572/572 ━━━━━━━━━━━━━━━━━━━━ 84s 78ms/step - accuracy: 0.9972 - loss: 0.0252 - val_accuracy: 0.9790 - val_loss: 0.1052 - learning_rate: 1.0000e-05
+Epoch 19/25
+572/572 ━━━━━━━━━━━━━━━━━━━━ 44s 77ms/step - accuracy: 0.9967 - loss: 0.0276 - val_accuracy: 0.9788 - val_loss: 0.1076 - learning_rate: 1.0000e-06
+Epoch 20/25
+572/572 ━━━━━━━━━━━━━━━━━━━━ 43s 75ms/step - accuracy: 0.9971 - loss: 0.0265 - val_accuracy: 0.9788 - val_loss: 0.1075 - learning_rate: 1.0000e-06
+Epoch 21/25
+572/572 ━━━━━━━━━━━━━━━━━━━━ 49s 86ms/step - accuracy: 0.9979 - loss: 0.0228 - val_accuracy: 0.9788 - val_loss: 0.1064 - learning_rate: 1.0000e-07
+Epoch 22/25
+572/572 ━━━━━━━━━━━━━━━━━━━━ 76s 76ms/step - accuracy: 0.9971 - loss: 0.0247 - val_accuracy: 0.9792 - val_loss: 0.1058 - learning_rate: 1.0000e-07
+Epoch 23/25
+572/572 ━━━━━━━━━━━━━━━━━━━━ 44s 78ms/step - accuracy: 0.9973 - loss: 0.0246 - val_accuracy: 0.9792 - val_loss: 0.1052 - learning_rate: 1.0000e-08
+Epoch 24/25
+572/572 ━━━━━━━━━━━━━━━━━━━━ 45s 79ms/step - accuracy: 0.9968 - loss: 0.0275 - val_accuracy: 0.9788 - val_loss: 0.1042 - learning_rate: 1.0000e-08
+Epoch 25/25
+572/572 ━━━━━━━━━━━━━━━━━━━━ 81s 76ms/step - accuracy: 0.9971 - loss: 0.0253 - val_accuracy: 0.9786 - val_loss: 0.1047 - learning_rate: 1.0000e-08
+
+In [32] :
+
+plot_loss_curves(history)
+
+     
+
+
+
 
 
 
