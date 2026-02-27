@@ -354,6 +354,193 @@ WARNING:matplotlib.image:Clipping input data to the valid range for imshow with 
 
 
 
+In [17] :
+
+
+# Lets check the min and max values of the images
+
+for images,labels in train_data.take(1):
+  print(tf.reduce_min(images[0]))
+  print(tf.reduce_max(images[0]))
+     
+tf.Tensor(0.0, shape=(), dtype=float32)
+tf.Tensor(255.0, shape=(), dtype=float32)
+
+
+
+In [18] :
+
+
+# Lets retrieve number of batches
+
+len(train_data)
+
+Out [18] :
+
+572
+
+In [19] :
+
+
+from tensorflow.keras import layers
+# create a  rescaling layer
+
+rescale_layer = layers.Rescaling(1/255.)
+     
+In [20] :
+
+
+# Lets rescale the images batch-wise
+
+def rescale_over_batches(images,labels):
+  images = rescale_layer(images)
+  return images,labels
+
+train_data = train_data.map(rescale_over_batches)
+validation_data = validation_data.map(rescale_over_batches)
+test_data = test_data.map(rescale_over_batches)
+     
+In [21] :
+
+
+for images,labels in train_data.take(1):
+  print(tf.reduce_min(images[0]))
+  print(tf.reduce_max(images[0]))
+
+
+tf.Tensor(0.0, shape=(), dtype=float32)
+tf.Tensor(0.9048564, shape=(), dtype=float32)
+
+
+
+In [22] :
+
+
+# Since rescaling is done lets again try to view the images
+
+view_images(train_data)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+MODEL BUILDING
+
+
+EfficientNet V2B2
+
+In [23] :
+
+
+from tensorflow.keras.applications import EfficientNetV2B2
+
+base_model = EfficientNetV2B2(include_top=False)
+base_model.trainable = False
+     
+Downloading data from https://storage.googleapis.com/tensorflow/keras-applications/efficientnet_v2/efficientnetv2-b2_notop.h5
+35839040/35839040 ━━━━━━━━━━━━━━━━━━━━ 3s 0us/step
+
+
+In [24] :
+
+
+import random
+tf.random.set_seed(42)
+np.random.seed(42)
+random.seed(42)
+# Create an input layer
+inputs = tf.keras.layers.Input(shape=(128,128,3))
+
+# Preprocess layer of EfficientNet
+tf.keras.applications.efficientnet_v2.preprocess_input(inputs)
+
+# Import the EfficientNet  pre-trained model
+x = base_model(inputs,training=False)
+
+# Lets introduce a AveragePooling layer to redduce the dimensions
+x = layers.GlobalAvgPool2D()(x)
+
+# Add a FC layer
+x = layers.Dense(1024,kernel_regularizer='l2')(x)
+x = layers.Dense(512,kernel_regularizer='l2')(x)
+x = layers.Dense(256,kernel_regularizer='l2')(x)
+
+# Add batch normalization
+x = layers.BatchNormalization()(x)
+
+#Add actiavtion layer
+x = tf.keras.activations.relu(x)
+
+#Add dropout layer
+x = layers.Dropout(0.6)(x)
+
+# Lets define the output layer
+outputs = layers.Dense(4,activation='softmax')(x)
+
+# Build the model
+model = tf.keras.Model(inputs,outputs)
+
+
+In [25] : 
+
+model.summary()
+
+
+Model: "functional"
+
+| ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━┓
+┃ Layer (type)                         ┃ Output Shape                ┃         Param # ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━┩
+│ input_layer_1 (InputLayer)           │ (None, 128, 128, 3)         │               0 │
+├──────────────────────────────────────┼─────────────────────────────┼─────────────────┤
+│ efficientnetv2-b2 (Functional)       │ (None, 4, 4, 1408)          │       8,769,374 │
+├──────────────────────────────────────┼─────────────────────────────┼─────────────────┤
+│ global_average_pooling2d             │ (None, 1408)                │               0 │
+│ (GlobalAveragePooling2D)             │                             │                 │
+├──────────────────────────────────────┼─────────────────────────────┼─────────────────┤
+│ dense (Dense)                        │ (None, 1024)                │       1,442,816 │
+├──────────────────────────────────────┼─────────────────────────────┼─────────────────┤
+│ dense_1 (Dense)                      │ (None, 512)                 │         524,800 │
+├──────────────────────────────────────┼─────────────────────────────┼─────────────────┤
+│ dense_2 (Dense)                      │ (None, 256)                 │         131,328 │
+├──────────────────────────────────────┼─────────────────────────────┼─────────────────┤
+│ batch_normalization                  │ (None, 256)                 │           1,024 │
+│ (BatchNormalization)                 │                             │                 │
+├──────────────────────────────────────┼─────────────────────────────┼─────────────────┤
+│ re_lu (ReLU)                         │ (None, 256)                 │               0 │
+├──────────────────────────────────────┼─────────────────────────────┼─────────────────┤
+│ dropout (Dropout)                    │ (None, 256)                 │               0 │
+├──────────────────────────────────────┼─────────────────────────────┼─────────────────┤
+│ dense_3 (Dense)                      │ (None, 4)                   │           1,028 │
+└──────────────────────────────────────┴─────────────────────────────┴─────────────────┘
+
+Total params: 10,870,370 (41.47 MB)
+Trainable params: 2,100,484 (8.01 MB)
+Non-trainable params: 8,769,886 (33.45 MB)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
