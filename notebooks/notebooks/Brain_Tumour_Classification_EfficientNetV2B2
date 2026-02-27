@@ -68,6 +68,293 @@ Text(3, 6380, '6380')
 
 
 
+In [6] :
+
+
+# Testing the shape of one image to understand the dimensions
+
+image = mpimg.imread("/content/BrainTumor_1/Train/meningioma/0200.jpg")
+plt.imshow(image)
+image.shape
+
+Out [6] :
+
+(345, 300, 3)
+
+
+
+
+
+
+
+
+
+
+
+
+In [7] : 
+
+
+# Getting the data loaders ready to load data into variables
+
+from tensorflow.keras.preprocessing import image_dataset_from_directory
+
+
+train_data,validation_data = image_dataset_from_directory(directory=train_dir,
+                                          label_mode='int',
+                                          color_mode='grayscale',
+                                          batch_size=32,
+                                          image_size=(128,128),
+                                          seed=42,
+                                          subset="both",
+                                          validation_split=0.2,
+                                          shuffle=True)
+
+test_data = image_dataset_from_directory(directory=test_dir,
+                                          label_mode='int',
+                                          color_mode='grayscale',
+                                          batch_size=32,
+                                          image_size=(128,128),
+                                          seed=42,
+                                          shuffle=True)
+     
+Found 22848 files belonging to 4 classes.
+Using 18279 files for training.
+Using 4569 files for validation.
+Found 1311 files belonging to 4 classes.
+
+
+In [8] :
+
+
+# Lets store the class names to access them
+
+class_names = train_data.class_names
+class_names
+
+ Out [8] :
+
+['glioma', 'meningioma', 'notumor', 'pituitary']
+
+
+In [9] :
+
+import numpy as np
+
+# Initialize counts
+n_glioma = 0
+n_meningioma = 0
+n_notumor = 0
+n_pituitary = 0
+
+
+for images, labels in train_data:
+    labels_np = labels.numpy()
+
+
+    for label in labels_np:
+        if class_names[int(label)] == 'glioma':
+            n_glioma += 1
+        elif class_names[int(label)] == 'meningioma':
+            n_meningioma += 1
+        elif class_names[int(label)] == 'notumor':
+            n_notumor += 1
+        elif class_names[int(label)] == 'pituitary':
+            n_pituitary += 1
+
+
+print("Number of samples for each class:")
+print("Glioma:", n_glioma)
+print("Meningioma:", n_meningioma)
+print("No Tumor:", n_notumor)
+print("Pituitary:", n_pituitary)
+
+print(n_glioma+n_meningioma+n_notumor+n_pituitary)
+
+
+Number of samples for each class:
+Glioma: 4230
+Meningioma: 4332
+No Tumor: 5098
+Pituitary: 4619
+18279
+
+
+
+In [10] :
+
+
+# Calculate the weights of each class to deal wiht class imbalances
+
+glioma_weight = 0
+meningioma_weight = 0
+notumor_weight = 0
+pituitary_weight =0
+n = 18279
+
+class_count = np.array([4230,4332,5098,4619])
+
+class_weights = {0:glioma_weight,1:meningioma_weight,2:notumor_weight,3:pituitary_weight}
+
+for i in range(4):
+    class_weights[i] = (n/(4*class_count[i]))
+
+class_weights
+
+
+Out [10] :
+
+{0: 1.0803191489361703,
+ 1: 1.054882271468144,
+ 2: 0.89638093369949,
+ 3: 0.9893375189434943}
+
+
+
+
+In [11] :
+
+
+import matplotlib.pyplot as plt
+
+samples_count = [4230, 4332, 5098, 4619]
+samples_percentage = []
+total = sum(samples_count)
+
+for i in samples_count:
+    k = i / total
+    samples_percentage.append(k)
+
+plt.figure(figsize=(6, 6))
+plt.pie(
+    samples_count,
+    labels=["Glioma", "Meningioma", "No Tumour", "Pituitary"],
+    autopct=lambda p: f'{p:.2f}%',
+    pctdistance=0.5,
+    labeldistance=1.1,
+    colors=['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728']
+)
+
+plt.legend(["Glioma", "Meningioma", "No Tumour", "Pituitary"], bbox_to_anchor=(1.1, 1.1))
+
+plt.show()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+In [12] :
+
+
+# Lets take an image and check its shape
+
+for image,labels in train_data.take(1):
+  plt.imshow(image[0]) #view the first image of the batch
+  print(labels[0]) #view label of first image
+  plt.title(f"{class_names[labels[0]]}")
+  print(image[0].shape)
+
+
+tf.Tensor(1, shape=(), dtype=int32)
+(128, 128, 1)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Create a function to view multiple images at once
+
+def view_images(train_data):
+  for images,labels in train_data.take(1):
+    plt.figure()
+    for i in range(4):
+      plt.subplot(2,2,i+1)
+      plt.imshow(images[i])
+      plt.title(f"{class_names[labels[i]]}")
+      plt.xlabel(f"{images[i].shape}")
+    plt.tight_layout()
+
+
+
+In [13] :
+
+
+# Check the min and max values of image vector(if needed rescale)
+for images,labels in train_data.take(1):
+  print(tf.reduce_min(images[0]))
+  print(tf.reduce_max(images[0]))
+     
+tf.Tensor(0.0, shape=(), dtype=float32)
+tf.Tensor(255.0, shape=(), dtype=float32)
+
+
+
+In [14] :
+
+
+# Create a custom function and combine with tensorflow function to convert batches of images to rgb
+
+def grayscale_to_rgb(images,labels):
+  images = tf.image.grayscale_to_rgb(images)
+  return images,labels
+
+train_data = train_data.map(grayscale_to_rgb)
+validation_data = validation_data.map(grayscale_to_rgb)
+test_data = test_data.map(grayscale_to_rgb)
+
+
+
+In [16] :
+
+
+# Lets check if our images are succesfully converted to rgb
+view_images(train_data)
+
+
+WARNING:matplotlib.image:Clipping input data to the valid range for imshow with RGB data ([0..1] for floats or [0..255] for integers).
+WARNING:matplotlib.image:Clipping input data to the valid range for imshow with RGB data ([0..1] for floats or [0..255] for integers).
+WARNING:matplotlib.image:Clipping input data to the valid range for imshow with RGB data ([0..1] for floats or [0..255] for integers).
+WARNING:matplotlib.image:Clipping input data to the valid range for imshow with RGB data ([0..1] for floats or [0..255] for integers).
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
