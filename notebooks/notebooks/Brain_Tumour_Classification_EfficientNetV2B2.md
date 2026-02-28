@@ -11,7 +11,8 @@ import tensorflow as tf
 import matplotlib.image as mpimg
 
 In [2] : 
-# Downloading the zipfile and extracting
+
+ Downloading the zipfile and extracting
 
 !gdown 11R-D1robYjdyMZ4KooWuAlZH1WyRpCdl
      
