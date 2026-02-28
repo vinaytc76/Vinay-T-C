@@ -12,7 +12,7 @@ import matplotlib.image as mpimg
 
 In [2] : 
 
- Downloading the zipfile and extracting
+ #Downloading the zipfile and extracting
 
 !gdown 11R-D1robYjdyMZ4KooWuAlZH1WyRpCdl
      
@@ -25,7 +25,7 @@ To: /content/BrainTumor_1.zip
 In [3] :
 
 
-# Unzip the file
+ #Unzip the file
 import zipfile
 
 zip_ref = zipfile.ZipFile("BrainTumor_1.zip")
@@ -36,7 +36,7 @@ zip_ref.close()
 In [4] :
 
 
-# Lets store our training and testing directories
+ #Lets store our training and testing directories
 
 train_dir = "/content/BrainTumor_1/Train"
 test_dir = "/content/BrainTumor_1/Test"
@@ -44,7 +44,7 @@ test_dir = "/content/BrainTumor_1/Test"
 In [5] :
 
 
-# Plotting the number of images of each category
+ #Plotting the number of images of each category
 import os
 
 glioma_count = len(os.listdir("/content/BrainTumor_1/Train/glioma"))
@@ -75,7 +75,7 @@ Text(3, 6380, '6380')
 In [6] :
 
 
-# Testing the shape of one image to understand the dimensions
+#Testing the shape of one image to understand the dimensions
 
 image = mpimg.imread("/content/BrainTumor_1/Train/meningioma/0200.jpg")
 plt.imshow(image)
@@ -99,7 +99,7 @@ Out [6] :
 In [7] : 
 
 
-# Getting the data loaders ready to load data into variables
+#Getting the data loaders ready to load data into variables
 
 from tensorflow.keras.preprocessing import image_dataset_from_directory
 
@@ -131,7 +131,7 @@ Found 1311 files belonging to 4 classes.
 In [8] :
 
 
-# Lets store the class names to access them
+#Lets store the class names to access them
 
 class_names = train_data.class_names
 class_names
@@ -145,7 +145,7 @@ In [9] :
 
 import numpy as np
 
-# Initialize counts
+#Initialize counts
 n_glioma = 0
 n_meningioma = 0
 n_notumor = 0
@@ -188,7 +188,7 @@ Pituitary: 4619
 In [10] :
 
 
-# Calculate the weights of each class to deal wiht class imbalances
+#Calculate the weights of each class to deal wiht class imbalances
 
 glioma_weight = 0
 meningioma_weight = 0
@@ -261,7 +261,7 @@ plt.show()
 In [12] :
 
 
-# Lets take an image and check its shape
+#Lets take an image and check its shape
 
 for image,labels in train_data.take(1):
   plt.imshow(image[0]) #view the first image of the batch
@@ -290,7 +290,7 @@ tf.Tensor(1, shape=(), dtype=int32)
 
 
 
-# Create a function to view multiple images at once
+#Create a function to view multiple images at once
 
 def view_images(train_data):
   for images,labels in train_data.take(1):
@@ -307,7 +307,7 @@ def view_images(train_data):
 In [13] :
 
 
-# Check the min and max values of image vector(if needed rescale)
+#Check the min and max values of image vector(if needed rescale)
 for images,labels in train_data.take(1):
   print(tf.reduce_min(images[0]))
   print(tf.reduce_max(images[0]))
@@ -319,8 +319,7 @@ tf.Tensor(255.0, shape=(), dtype=float32)
 
 In [14] :
 
-
-# Create a custom function and combine with tensorflow function to convert batches of images to rgb
+#Create a custom function and combine with tensorflow function to convert batches of images to rgb
 
 def grayscale_to_rgb(images,labels):
   images = tf.image.grayscale_to_rgb(images)
@@ -335,7 +334,7 @@ test_data = test_data.map(grayscale_to_rgb)
 In [16] :
 
 
-# Lets check if our images are succesfully converted to rgb
+#Lets check if our images are succesfully converted to rgb
 view_images(train_data)
 
 
@@ -361,7 +360,7 @@ WARNING:matplotlib.image:Clipping input data to the valid range for imshow with 
 In [17] :
 
 
-# Lets check the min and max values of the images
+#Lets check the min and max values of the images
 
 for images,labels in train_data.take(1):
   print(tf.reduce_min(images[0]))
@@ -375,7 +374,7 @@ tf.Tensor(255.0, shape=(), dtype=float32)
 In [18] :
 
 
-# Lets retrieve number of batches
+#Lets retrieve number of batches
 
 len(train_data)
 
@@ -387,14 +386,14 @@ In [19] :
 
 
 from tensorflow.keras import layers
-# create a  rescaling layer
+#create a  rescaling layer
 
 rescale_layer = layers.Rescaling(1/255.)
      
 In [20] :
 
 
-# Lets rescale the images batch-wise
+#Lets rescale the images batch-wise
 
 def rescale_over_batches(images,labels):
   images = rescale_layer(images)
@@ -420,7 +419,7 @@ tf.Tensor(0.9048564, shape=(), dtype=float32)
 In [22] :
 
 
-# Since rescaling is done lets again try to view the images
+#Since rescaling is done lets again try to view the images
 
 view_images(train_data)
 
@@ -461,24 +460,24 @@ import random
 tf.random.set_seed(42)
 np.random.seed(42)
 random.seed(42)
-# Create an input layer
+#Create an input layer
 inputs = tf.keras.layers.Input(shape=(128,128,3))
 
-# Preprocess layer of EfficientNet
+#Preprocess layer of EfficientNet
 tf.keras.applications.efficientnet_v2.preprocess_input(inputs)
 
-# Import the EfficientNet  pre-trained model
+#Import the EfficientNet  pre-trained model
 x = base_model(inputs,training=False)
 
-# Lets introduce a AveragePooling layer to redduce the dimensions
+#Lets introduce a AveragePooling layer to redduce the dimensions
 x = layers.GlobalAvgPool2D()(x)
 
-# Add a FC layer
+#Add a FC layer
 x = layers.Dense(1024,kernel_regularizer='l2')(x)
 x = layers.Dense(512,kernel_regularizer='l2')(x)
 x = layers.Dense(256,kernel_regularizer='l2')(x)
 
-# Add batch normalization
+#Add batch normalization
 x = layers.BatchNormalization()(x)
 
 #Add actiavtion layer
@@ -487,10 +486,10 @@ x = tf.keras.activations.relu(x)
 #Add dropout layer
 x = layers.Dropout(0.6)(x)
 
-# Lets define the output layer
+#Lets define the output layer
 outputs = layers.Dense(4,activation='softmax')(x)
 
-# Build the model
+#Build the model
 model = tf.keras.Model(inputs,outputs)
 
 
@@ -501,7 +500,7 @@ model.summary()
 
 Model: "functional"
 
-| ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━┓
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━┓
 ┃ Layer (type)                         ┃ Output Shape                ┃         Param # ┃
 ┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━┩
 │ input_layer_1 (InputLayer)           │ (None, 128, 128, 3)         │               0 │
@@ -581,7 +580,7 @@ for layer in base_model.layers[-310:]:
      
 In [29] :
 
-# Recompile the model
+#Recompile the model
 model.compile(loss="sparse_categorical_crossentropy",
                 optimizer=tf.keras.optimizers.Adam(),
                metrics=["accuracy"])
@@ -603,7 +602,7 @@ csv_logger = tf.keras.callbacks.CSVLogger("EfficientNetV2B2_fine_tune.csv")
 In [31] : 
 
 
-# Fit the fine tuned model
+#Fit the fine tuned model
 history = model.fit(train_data,epochs=25,
                                  validation_data=validation_data,
                                 callbacks=[reduce_lr,checkpoint,csv_logger],
@@ -819,7 +818,7 @@ In [38] :
 from sklearn.metrics import classification_report, recall_score, accuracy_score, precision_score, f1_score, confusion_matrix, roc_auc_score
 import numpy as np
 
-# Assuming y_true and y_pred are the ground truth and predicted labels
+#Assuming y_true and y_pred are the ground truth and predicted labels
 accuracy = accuracy_score(y_true, y_pred)
 precision = precision_score(y_true, y_pred, average=None, zero_division=0)
 f1 = f1_score(y_true, y_pred, average=None, zero_division=0)
