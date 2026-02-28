@@ -1,13 +1,16 @@
 In [1] :
 
 import numpy as np
+
 import pandas as pd
+
 import matplotlib.pyplot as plt
+
 import tensorflow as tf
+
 import matplotlib.image as mpimg
 
 In [2] : 
-
 # Downloading the zipfile and extracting
 
 !gdown 11R-D1robYjdyMZ4KooWuAlZH1WyRpCdl
