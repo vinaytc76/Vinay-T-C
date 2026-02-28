@@ -1,0 +1,77 @@
+🧠Brain Tumour Classification 
+using DenseNet169
+
+
+In [1] :
+
+
+# To ignore warinings
+import warnings
+warnings.filterwarnings('ignore')
+
+In [2] :
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import tensorflow as tf
+import matplotlib.image as mpimg
+
+In [3] :
+
+# Downloading the zipfile and extracting
+
+!gdown 11R-D1robYjdyMZ4KooWuAlZH1WyRpCdl
+Downloading...
+From (original): https://drive.google.com/uc?id=11R-D1robYjdyMZ4KooWuAlZH1WyRpCdl
+From (redirected): https://drive.google.com/uc?id=11R-D1robYjdyMZ4KooWuAlZH1WyRpCdl&confirm=t&uuid=8a55ddba-0c99-4425-b3e1-6ee6a0266c48
+To: /content/BrainTumor_1.zip
+100% 514M/514M [00:09<00:00, 53.6MB/s]
+
+
+Data Fetching and 
+Exploratory Data Analysis
+
+In [4] :
+
+# Unzip the file
+import zipfile
+
+zip_ref = zipfile.ZipFile("BrainTumor_1.zip")
+zip_ref.extractall()
+zip_ref.close()
+
+
+In [5] :
+
+# Lets store our training and testing directories
+
+train_dir = "BrainTumor_1/Train"
+test_dir = "BrainTumor_1/Test"
+
+In [6] :
+
+# Plotting the number of images of each category
+import os
+
+glioma_count = len(os.listdir("BrainTumor_1/Train/glioma"))
+meningioma_count = len(os.listdir("BrainTumor_1/Train/meningioma"))
+pituitary_count = len(os.listdir("BrainTumor_1/Train/notumor"))
+no_tumor_count = len(os.listdir("BrainTumor_1/Train/pituitary"))
+
+plt.bar(["glioma","meningioma","notumour","pituitary"],[glioma_count,meningioma_count,no_tumor_count,pituitary_count])
+plt.title("Number of images of each category")
+plt.xlabel("Category")
+plt.ylabel("Number of images")
+
+plt.text(0,glioma_count,s=glioma_count,fontweight='bold',fontsize='medium',ha='center',va='bottom')
+plt.text(1,meningioma_count,s=meningioma_count,fontweight='bold',fontsize='medium',ha='center',va='bottom')
+plt.text(2,no_tumor_count,s=no_tumor_count,fontweight='bold',fontsize='medium',ha='center',va='bottom')
+plt.text(3,pituitary_count,s=pituitary_count,fontweight='bold',fontsize='medium',ha='center',va='bottom')
+
+
+Out [6] :
+
+Text(3, 6380, '6380')
+
+
