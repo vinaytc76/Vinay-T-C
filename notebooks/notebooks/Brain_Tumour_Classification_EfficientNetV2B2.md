@@ -571,7 +571,7 @@ Out [27] :
 In [28] :
 
 
-# Unfreeze layers to fine tune
+#Unfreeze layers to fine tune
 
 base_model.trainable = False
 
