@@ -501,10 +501,478 @@ view_images(train_data)
        lets start by building 
        a Pre Trained model
 
+MODEL BUILDING
+
+VGG19 Model
+
+
+In [24] :
+
+
+from tensorflow.keras.applications import VGG19
+
+base_model = VGG19(include_top=False)
+base_model.trainable = False
+
+
+In [25] :
+
+
+import random
+tf.random.set_seed(42)
+np.random.seed(42)
+random.seed(42)
+# Create an input layer
+inputs = tf.keras.layers.Input(shape=(128,128,3))
+
+# Preprocess layer of VCG19
+x = tf.keras.applications.vgg19.preprocess_input(inputs)
+
+# Import the VCG 19 pre-trained model
+x = base_model(inputs,training=False)
+
+# Lets introduce a AveragePooling layer to redduce the dimensions
+x = layers.GlobalAvgPool2D()(x)
+
+# Add a regularization layer
+x = layers.Dense(128)(x)
+
+# Add batch normalization
+x = layers.BatchNormalization()(x)
+
+#Add actiavtion layer
+x = tf.keras.activations.relu(x)
+
+#Add dropout layer
+x = layers.Dropout(0.5)(x)
+
+# Lets define the output layer
+outputs = layers.Dense(4,activation='softmax')(x)
+
+# Build the model
+model_1 = tf.keras.Model(inputs,outputs)
+
+
+In [26] :
+
+model_1.summary()
+
+Model: "functional"
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━┓
+┃ Layer (type)                         ┃ Output Shape                ┃         Param # ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━┩
+│ input_layer_1 (InputLayer)           │ (None, 128, 128, 3)         │               0 │
+├──────────────────────────────────────┼─────────────────────────────┼─────────────────┤
+│ vgg19 (Functional)                   │ (None, 4, 4, 512)           │      20,024,384 │
+├──────────────────────────────────────┼─────────────────────────────┼─────────────────┤
+│ global_average_pooling2d             │ (None, 512)                 │               0 │
+│ (GlobalAveragePooling2D)             │                             │                 │
+├──────────────────────────────────────┼─────────────────────────────┼─────────────────┤
+│ dense (Dense)                        │ (None, 128)                 │          65,664 │
+├──────────────────────────────────────┼─────────────────────────────┼─────────────────┤
+│ batch_normalization                  │ (None, 128)                 │             512 │
+│ (BatchNormalization)                 │                             │                 │
+├──────────────────────────────────────┼─────────────────────────────┼─────────────────┤
+│ re_lu (ReLU)                         │ (None, 128)                 │               0 │
+├──────────────────────────────────────┼─────────────────────────────┼─────────────────┤
+│ dropout (Dropout)                    │ (None, 128)                 │               0 │
+├──────────────────────────────────────┼─────────────────────────────┼─────────────────┤
+│ dense_1 (Dense)                      │ (None, 4)                   │             516 │
+└──────────────────────────────────────┴─────────────────────────────┴─────────────────┘
+
+
+Total params: 20,091,076 (76.64 MB)
+ Trainable params: 66,436 (259.52 KB)
+ Non-trainable params: 20,024,640 (76.39 MB)
 
 
 
 
+In [27] :
+
+def plot_loss_curves(history):
+  train_loss = history.history["loss"]
+  val_loss = history.history["val_loss"]
+
+  train_accuracy = history.history["accuracy"]
+  val_accuracy = history.history["val_accuracy"]
+
+  plt.figure()
+  plt.subplot(2,1,1)
+  plt.title("Loss curves")
+  plt.plot(train_loss,label="Training Loss")
+  plt.plot(val_loss,label="Validation Loss")
+  plt.xlabel("Epochs")
+  plt.ylabel("loss")
+  plt.legend()
+
+
+  plt.subplot(2,1,2)
+  plt.title("Accuracy curves")
+  plt.plot(train_accuracy,label="Training Accuracy")
+  plt.plot(val_accuracy,label="Validation Accuracy")
+  plt.xlabel("Epochs")
+  plt.ylabel("Accuracy")
+  plt.legend()
+  plt.tight_layout()
+     
+In [28] :
+
+# Fine tuning the model
+
+for i,layer in enumerate(base_model.layers):
+  print(i,layer.name,layer.trainable)
+     
+0 input_layer False
+1 block1_conv1 False
+2 block1_conv2 False
+3 block1_pool False
+4 block2_conv1 False
+5 block2_conv2 False
+6 block2_pool False
+7 block3_conv1 False
+8 block3_conv2 False
+9 block3_conv3 False
+10 block3_conv4 False
+11 block3_pool False
+12 block4_conv1 False
+13 block4_conv2 False
+14 block4_conv3 False
+15 block4_conv4 False
+16 block4_pool False
+17 block5_conv1 False
+18 block5_conv2 False
+19 block5_conv3 False
+20 block5_conv4 False
+21 block5_pool False
+
+
+
+
+In [29] :
+
+# Unfreeze last 10 layers
+
+base_model.trainable = False
+
+for layer in base_model.layers[-10:]:
+  layer.trainable=True
+     
+In [30] :
+
+
+for layer in base_model.layers[-10:]:
+  print(layer,layer.trainable)
+     
+<Conv2D name=block4_conv1, built=True> True
+<Conv2D name=block4_conv2, built=True> True
+<Conv2D name=block4_conv3, built=True> True
+<Conv2D name=block4_conv4, built=True> True
+<MaxPooling2D name=block4_pool, built=True> True
+<Conv2D name=block5_conv1, built=True> True
+<Conv2D name=block5_conv2, built=True> True
+<Conv2D name=block5_conv3, built=True> True
+<Conv2D name=block5_conv4, built=True> True
+<MaxPooling2D name=block5_pool, built=True> True
+
+In [31] :
+
+# Recompile the model
+model_1.compile(loss="sparse_categorical_crossentropy",
+                optimizer=tf.keras.optimizers.Adam(learning_rate=0.0001),
+                metrics=["accuracy"])
+     
+In [32] :
+
+reduce_lr = tf.keras.callbacks.ReduceLROnPlateau(patience=2,
+                                                          factor=0.1,
+                                                          min_lr=1e-8)
+
+checkpoint_path = "vgg19_fine_tune.weights.h5"
+checkpoint = tf.keras.callbacks.ModelCheckpoint(checkpoint_path,
+                                                save_best_only=True,
+                                                save_weights_only=True,
+                                                monitor='val_loss')
+
+csv_logger = tf.keras.callbacks.CSVLogger("vgg19_fine_tune.csv")
+     
+In [33] :
+
+# Fit the model
+history = model_1.fit(train_data,
+                                 epochs=25,
+                                 validation_data=validation_data,
+                                callbacks=[reduce_lr,checkpoint,csv_logger],
+                                class_weight=class_weights)
+
+Epoch 1/25
+572/572 ━━━━━━━━━━━━━━━━━━━━ 106s 161ms/step - accuracy: 0.7735 - loss: 0.6088 - val_accuracy: 0.7949 - val_loss: 0.8419 - learning_rate: 1.0000e-04
+Epoch 2/25
+572/572 ━━━━━━━━━━━━━━━━━━━━ 114s 132ms/step - accuracy: 0.9228 - loss: 0.2232 - val_accuracy: 0.6684 - val_loss: 1.4697 - learning_rate: 1.0000e-04
+Epoch 3/25
+572/572 ━━━━━━━━━━━━━━━━━━━━ 73s 127ms/step - accuracy: 0.9522 - loss: 0.1519 - val_accuracy: 0.8501 - val_loss: 0.6818 - learning_rate: 1.0000e-04
+Epoch 4/25
+572/572 ━━━━━━━━━━━━━━━━━━━━ 75s 132ms/step - accuracy: 0.9672 - loss: 0.1061 - val_accuracy: 0.9645 - val_loss: 0.1081 - learning_rate: 1.0000e-04
+Epoch 5/25
+572/572 ━━━━━━━━━━━━━━━━━━━━ 79s 127ms/step - accuracy: 0.9752 - loss: 0.0823 - val_accuracy: 0.9411 - val_loss: 0.1901 - learning_rate: 1.0000e-04
+Epoch 6/25
+572/572 ━━━━━━━━━━━━━━━━━━━━ 82s 127ms/step - accuracy: 0.9820 - loss: 0.0655 - val_accuracy: 0.9418 - val_loss: 0.1905 - learning_rate: 1.0000e-04
+Epoch 7/25
+572/572 ━━━━━━━━━━━━━━━━━━━━ 86s 133ms/step - accuracy: 0.9912 - loss: 0.0334 - val_accuracy: 0.9884 - val_loss: 0.0382 - learning_rate: 1.0000e-05
+Epoch 8/25
+572/572 ━━━━━━━━━━━━━━━━━━━━ 72s 126ms/step - accuracy: 0.9979 - loss: 0.0134 - val_accuracy: 0.9880 - val_loss: 0.0382 - learning_rate: 1.0000e-05
+Epoch 9/25
+572/572 ━━━━━━━━━━━━━━━━━━━━ 86s 133ms/step - accuracy: 0.9984 - loss: 0.0104 - val_accuracy: 0.9897 - val_loss: 0.0344 - learning_rate: 1.0000e-05
+Epoch 10/25
+572/572 ━━━━━━━━━━━━━━━━━━━━ 75s 131ms/step - accuracy: 0.9991 - loss: 0.0069 - val_accuracy: 0.9873 - val_loss: 0.0380 - learning_rate: 1.0000e-05
+Epoch 11/25
+572/572 ━━━━━━━━━━━━━━━━━━━━ 72s 126ms/step - accuracy: 0.9989 - loss: 0.0066 - val_accuracy: 0.9840 - val_loss: 0.0526 - learning_rate: 1.0000e-05
+Epoch 12/25
+572/572 ━━━━━━━━━━━━━━━━━━━━ 75s 131ms/step - accuracy: 0.9993 - loss: 0.0058 - val_accuracy: 0.9886 - val_loss: 0.0381 - learning_rate: 1.0000e-06
+Epoch 13/25
+572/572 ━━━━━━━━━━━━━━━━━━━━ 82s 132ms/step - accuracy: 0.9993 - loss: 0.0053 - val_accuracy: 0.9886 - val_loss: 0.0364 - learning_rate: 1.0000e-06
+Epoch 14/25
+572/572 ━━━━━━━━━━━━━━━━━━━━ 72s 126ms/step - accuracy: 0.9997 - loss: 0.0040 - val_accuracy: 0.9886 - val_loss: 0.0365 - learning_rate: 1.0000e-07
+Epoch 15/25
+572/572 ━━━━━━━━━━━━━━━━━━━━ 85s 132ms/step - accuracy: 0.9998 - loss: 0.0042 - val_accuracy: 0.9888 - val_loss: 0.0364 - learning_rate: 1.0000e-07
+Epoch 16/25
+572/572 ━━━━━━━━━━━━━━━━━━━━ 72s 126ms/step - accuracy: 0.9992 - loss: 0.0050 - val_accuracy: 0.9886 - val_loss: 0.0365 - learning_rate: 1.0000e-08
+Epoch 17/25
+572/572 ━━━━━━━━━━━━━━━━━━━━ 72s 126ms/step - accuracy: 0.9996 - loss: 0.0042 - val_accuracy: 0.9886 - val_loss: 0.0364 - learning_rate: 1.0000e-08
+Epoch 18/25
+572/572 ━━━━━━━━━━━━━━━━━━━━ 82s 126ms/step - accuracy: 0.9998 - loss: 0.0039 - val_accuracy: 0.9888 - val_loss: 0.0365 - learning_rate: 1.0000e-08
+Epoch 19/25
+572/572 ━━━━━━━━━━━━━━━━━━━━ 85s 132ms/step - accuracy: 0.9999 - loss: 0.0041 - val_accuracy: 0.9891 - val_loss: 0.0363 - learning_rate: 1.0000e-08
+Epoch 20/25
+572/572 ━━━━━━━━━━━━━━━━━━━━ 79s 126ms/step - accuracy: 0.9994 - loss: 0.0045 - val_accuracy: 0.9888 - val_loss: 0.0364 - learning_rate: 1.0000e-08
+Epoch 21/25
+572/572 ━━━━━━━━━━━━━━━━━━━━ 82s 127ms/step - accuracy: 0.9997 - loss: 0.0041 - val_accuracy: 0.9891 - val_loss: 0.0364 - learning_rate: 1.0000e-08
+Epoch 22/25
+572/572 ━━━━━━━━━━━━━━━━━━━━ 75s 131ms/step - accuracy: 0.9998 - loss: 0.0041 - val_accuracy: 0.9888 - val_loss: 0.0363 - learning_rate: 1.0000e-08
+Epoch 23/25
+572/572 ━━━━━━━━━━━━━━━━━━━━ 75s 131ms/step - accuracy: 0.9997 - loss: 0.0036 - val_accuracy: 0.9888 - val_loss: 0.0363 - learning_rate: 1.0000e-08
+Epoch 24/25
+572/572 ━━━━━━━━━━━━━━━━━━━━ 79s 127ms/step - accuracy: 0.9996 - loss: 0.0040 - val_accuracy: 0.9886 - val_loss: 0.0364 - learning_rate: 1.0000e-08
+Epoch 25/25
+572/572 ━━━━━━━━━━━━━━━━━━━━ 72s 126ms/step - accuracy: 0.9998 - loss: 0.0038 - val_accuracy: 0.9888 - val_loss: 0.0364 - learning_rate: 1.0000e-08
+
+
+In [34] :
+
+plot_loss_curves(history)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+In [35] :
+
+plt.figure()
+plt.plot(history.history["loss"],label="train_loss",c="dodgerblue",marker='o')
+plt.plot(history.history["val_loss"],label="val_loss",c="crimson",marker='o')
+plt.xlabel("Epochs")
+plt.ylabel("loss")
+plt.title("Loss vs Epochs")
+plt.legend()
+
+Out [35] :
+
+<matplotlib.legend.Legend 
+at 0x79e3700ecbb0>
+
+
+
+
+
+
+
+
+
+
+
+
+
+In [36] : 
+
+plt.figure()
+plt.plot(history.history["accuracy"],label="train_acc",c="dodgerblue",marker="o")
+plt.plot(history.history["val_accuracy"],label="val_acc",c="crimson",marker="o")
+plt.xlabel("Epochs")
+plt.title("Accuracy vs Epochs")
+plt.ylabel("Accuracy")
+plt.legend()
+
+Out [36] :
+
+<matplotlib.legend.Legend 
+at 0x79e33215a080>
+
+
+
+
+
+
+
+
+
+
+
+In [37] :
+
+model_1.evaluate(test_data)
+     
+
+41/41 ━━━━━━━━━━━━━━━━━━━━ 2s 58ms/step 
+-accuracy: 0.9783 - loss: 0.0489
+
+Out [37] :
+
+[0.045596830546855927, 
+0.9824561476707458]
+
+MODEL EVALUTION
+
+
+In [38] :
+
+from sklearn.metrics import precision_score,accuracy_score,confusion_matrix,f1_score,roc_auc_score
+
+
+y_true = []
+y_pred = []
+
+for xlabel, ylabel in test_data:
+    prediction = model_1.predict(xlabel)
+    y_pred.extend(np.argmax(prediction, axis=1))
+    y_true.extend(ylabel.numpy())
+
+1/1 ━━━━━━━━━━━━━━━━━━━━ 0s 57ms/step
+1/1 ━━━━━━━━━━━━━━━━━━━━ 0s 23ms/step
+1/1 ━━━━━━━━━━━━━━━━━━━━ 0s 20ms/step
+1/1 ━━━━━━━━━━━━━━━━━━━━ 0s 20ms/step
+1/1 ━━━━━━━━━━━━━━━━━━━━ 0s 19ms/step
+1/1 ━━━━━━━━━━━━━━━━━━━━ 0s 19ms/step
+1/1 ━━━━━━━━━━━━━━━━━━━━ 0s 19ms/step
+1/1 ━━━━━━━━━━━━━━━━━━━━ 0s 22ms/step
+1/1 ━━━━━━━━━━━━━━━━━━━━ 0s 24ms/step
+1/1 ━━━━━━━━━━━━━━━━━━━━ 0s 19ms/step
+1/1 ━━━━━━━━━━━━━━━━━━━━ 0s 19ms/step
+1/1 ━━━━━━━━━━━━━━━━━━━━ 0s 20ms/step
+1/1 ━━━━━━━━━━━━━━━━━━━━ 0s 20ms/step
+1/1 ━━━━━━━━━━━━━━━━━━━━ 0s 19ms/step
+1/1 ━━━━━━━━━━━━━━━━━━━━ 0s 20ms/step
+1/1 ━━━━━━━━━━━━━━━━━━━━ 0s 20ms/step
+1/1 ━━━━━━━━━━━━━━━━━━━━ 0s 19ms/step
+1/1 ━━━━━━━━━━━━━━━━━━━━ 0s 27ms/step
+1/1 ━━━━━━━━━━━━━━━━━━━━ 0s 18ms/step
+1/1 ━━━━━━━━━━━━━━━━━━━━ 0s 19ms/step
+1/1 ━━━━━━━━━━━━━━━━━━━━ 0s 19ms/step
+1/1 ━━━━━━━━━━━━━━━━━━━━ 0s 19ms/step
+1/1 ━━━━━━━━━━━━━━━━━━━━ 0s 21ms/step
+1/1 ━━━━━━━━━━━━━━━━━━━━ 0s 19ms/step
+1/1 ━━━━━━━━━━━━━━━━━━━━ 0s 19ms/step
+1/1 ━━━━━━━━━━━━━━━━━━━━ 0s 20ms/step
+1/1 ━━━━━━━━━━━━━━━━━━━━ 0s 24ms/step
+1/1 ━━━━━━━━━━━━━━━━━━━━ 0s 19ms/step
+1/1 ━━━━━━━━━━━━━━━━━━━━ 0s 22ms/step
+1/1 ━━━━━━━━━━━━━━━━━━━━ 0s 20ms/step
+1/1 ━━━━━━━━━━━━━━━━━━━━ 0s 20ms/step
+1/1 ━━━━━━━━━━━━━━━━━━━━ 0s 19ms/step
+1/1 ━━━━━━━━━━━━━━━━━━━━ 0s 18ms/step
+1/1 ━━━━━━━━━━━━━━━━━━━━ 0s 21ms/step
+1/1 ━━━━━━━━━━━━━━━━━━━━ 0s 21ms/step
+1/1 ━━━━━━━━━━━━━━━━━━━━ 0s 21ms/step
+1/1 ━━━━━━━━━━━━━━━━━━━━ 0s 22ms/step
+1/1 ━━━━━━━━━━━━━━━━━━━━ 0s 19ms/step
+1/1 ━━━━━━━━━━━━━━━━━━━━ 0s 19ms/step
+1/1 ━━━━━━━━━━━━━━━━━━━━ 0s 22ms/step
+1/1 ━━━━━━━━━━━━━━━━━━━━ 0s 21ms/step
+
+
+In [39] :
+
+from sklearn.metrics import classification_report, recall_score, accuracy_score, precision_score, f1_score, confusion_matrix, roc_auc_score
+import numpy as np
+
+# Assuming y_true and y_pred are the ground truth and predicted labels
+accuracy = accuracy_score(y_true, y_pred)
+precision = precision_score(y_true, y_pred, average=None, zero_division=0)
+f1 = f1_score(y_true, y_pred, average=None, zero_division=0)
+recall = recall_score(y_true, y_pred, average=None, zero_division=0)
+confusion_matrix = confusion_matrix(y_true, y_pred)
+
+print(f"Accuracy Score: {accuracy}\n")
+print(f"Precision Score: {precision}\n")
+print(f"F1 Score: {f1}\n")
+print(f"Recall Score: {recall}\n")
+print(f"Confusion Matrix:\n{confusion_matrix}")
+
+
+
+
+Accuracy Score: 0.9824561403508771
+
+Precision Score: [0.98305085 0.96103896 0.99753086 0.98349835]
+
+F1 Score: [0.97478992 0.96416938 0.99753086 0.98839138]
+
+Recall Score: [0.96666667 0.96732026 0.99753086 0.99333333]
+
+Confusion Matrix:
+[[290   9   0   1]
+ [  5 296   1   4]
+ [  0   1 404   0]
+ [  0   2   0 298]]
+
+
+In [40] :
+
+import seaborn as sns
+plt.figure()
+sns.heatmap(confusion_matrix,annot=True,
+           xticklabels=class_names,
+           yticklabels=class_names,fmt=".0f",cmap="crest")
+plt.xlabel('Predicted label')
+plt.ylabel('True Label')
+
+Out [40] :
+
+Text(50.72222222222221, 0.5, 
+'True Label')
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+SAVE THE MODEL
+
+In [36] :
+
+model_1.save("VGG19_model.keras")
 
 
 
